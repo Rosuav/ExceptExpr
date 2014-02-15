@@ -1,0 +1,137 @@
+PEP: XXX
+Title: Exception-catching expressions
+Version: $Revision$
+Last-Modified: $Date$
+Author: Chris Angelico <rosuav@gmail.com>
+Status: Draft
+Type: Standards Track
+Content-Type: text/x-rst
+Created: 15-Feb-2014
+Python-Version: 3.5
+Post-History:
+
+
+Abstract
+========
+
+Just as PEP 308 introduced a means of value-based conditions in an
+expression, this system allows exception-based conditions to be used as part
+of an expression.
+
+
+Motivation
+==========
+
+A number of functions and methods have parameters which will cause them to
+return a specified value instead of raising an exception.  The current system
+is ad-hoc and inconsistent, and requires that each function be individually
+written to have this functionality; not all support this.
+
+* dict.get(key, default) - second positional argument in place of KeyError
+
+* next(iter, default) - second positional argument in place of StopIteration
+
+* list.pop() - no way to return a default
+
+(TODO: Get more examples. I know there are some but I can't think of any now.)
+
+
+Rationale
+=========
+
+The current system requires that a function author predict the need for a
+default, and implement support for it. If this is not done, a full try/except
+block is needed.
+
+Note that the specific syntax is open to three metric tons of bike-shedding.
+
+The proposal may well be rejected, but even then is not useless; it can be
+maintained as a collection of failed syntaxes for expression exceptions.
+
+
+Proposal
+========
+
+Just as the 'or' operator and the three part 'if-else' expression give short
+circuiting methods of catching a falsy value and replacing it, this syntax
+gives a short-circuiting method of catching an exception and replacing it.
+
+This currently works::
+    lst = [1, 2, None, 3]
+    value = lst[2] or "No value"
+
+The proposal adds this::
+    lst = [1, 2]
+    value = lst[2] except IndexError pass "No value"
+
+The exception object can be captured just as in a normal try/except block::
+    # Return the next yielded or returned value from a generator
+    value = next(it) except StopIteration as e pass e.args[0]
+
+This is effectively equivalent to::
+    try:
+        _ = next(it)
+    except StopIteration as e:
+        _ = e.args[0]
+    value = _
+
+This ternary operator would be between lambda and if/else in precedence.
+
+
+Alternative Proposals
+=====================
+
+Discussion on python-ideas brought up the following syntax suggestions::
+    value = expr except default if Exception [as e]
+    value = expr except default for Exception [as e]
+    value = expr except default from Exception [as e]
+    value = expr except Exception [as e] return default
+    value = expr except (Exception [as e]: default)
+    value = expr except Exception [as e] try default
+    value = expr except Exception [as e] continue with default
+    value = default except Exception [as e] else expr
+
+In all cases, default is an expression which will not be evaluated unless
+an exception is raised; if 'as' is used, this expression may refer to the
+exception object.
+
+It has also been suggested that a new keyword be created, rather than reusing
+an existing one. Such proposals fall into the same structure as the advocated
+one, but with a different keyword in place of 'pass'. Suggestions include
+'then', 'when', and 'use'.
+
+
+Open Issues
+===========
+
+Chaining vs catching multiple exception types
+---------------------------------------------
+
+Extending the proposed syntax could be interpreted as either catching multiple
+exceptions from the same block, or as catching an exception thrown from the
+default value's evaluation::
+    value = ((next(it) except StopIteration as e pass e.args[0])
+	except NameError pass "Oops no iterator")
+    value = (next(it)
+        except StopIteration as e pass
+	    (e.args[0] except IndexError pass None))
+
+Whichever form is made the default (via operator associativity), the other can
+be invoked using parentheses.
+
+
+Copyright
+=========
+
+This document has been placed in the public domain.
+
+
+
+
+..
+   Local Variables:
+   mode: indented-text
+   indent-tabs-mode: nil
+   sentence-end-double-space: t
+   fill-column: 70
+   coding: utf-8
