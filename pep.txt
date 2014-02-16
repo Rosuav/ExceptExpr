@@ -33,11 +33,20 @@ written to have this functionality; not all support this.
 
 * list.pop() - no way to return a default
 
+* seq[index] - no way to handle a bounds error
+
 * min(sequence, default=default) - keyword argument in place of ValueError
 
 * sum(sequence, start=default) - slightly different but can do the same job
 
 * statistics.mean(data) - no way to handle an empty iterator
+
+Additionally, this syntax would allow a convenient way to capture exceptions
+in interactive Python; returned values are captured by "_", but exceptions
+currently are not. This could be spelled:
+
+>>> expr except Exception as e: e
+
 
 Rationale
 =========
@@ -62,19 +71,29 @@ def except_(expression, exception_list, default):
         return expression()
     except exception_list as e:
         return default(e)
-print(except_(lambda: 1/x, ZeroDivisionError, lambda e: float("nan")))
+value = except_(lambda: 1/x, ZeroDivisionError, lambda e: float("nan"))
 
 which is clunky, and unable to handle multiple exception clauses; or eval:
 
 def except_(expression, exception_list, default):
     try:
-        return eval(expression, globals_of_caller(), locals_of_caller()
+        return eval(expression, globals_of_caller(), locals_of_caller())
     except exception_list as exc:
         l = locals_of_caller().copy()
         l['exc'] = exc
         return eval(default, globals_of_caller(), l)
 
-which is even clunkier, and relies on implementation-dependent hacks.
+def globals_of_caller():
+    return sys._getframe(2).f_globals
+
+def locals_of_caller():
+    return sys._getframe(2).f_locals
+
+value = except_("""1/x""",ZeroDivisionError,""" "Can't divide by zero" """)
+
+which is even clunkier, and relies on implementation-dependent hacks. (Writing
+globals_of_caller() and locals_of_caller() for interpreters other than CPython
+is left as an exercise for the reader.)
 
 Raymond Hettinger `expresses`__ a desire for such a consistent API. Something
 similar has been `requested`__ `multiple`__ `times`__ in the past.
