@@ -51,6 +51,39 @@ middle of an expression. Just as if/else does for conditionals and lambda does
 for function definitions, so does this allows exception catching in an
 expression context.
 
+This provides a clean and consistent way for a function to provide a default:
+it simply raises an appropriate exception, and the caller catches it.
+
+There's no convenient way to write a helper function to do this; the nearest
+is something ugly using either lambda:
+
+def except_(expression, exception_list, default):
+    try:
+        return expression()
+    except exception_list as e:
+        return default(e)
+print(except_(lambda: 1/x, ZeroDivisionError, lambda e: float("nan")))
+
+which is clunky, and unable to handle multiple exception clauses; or eval:
+
+def except_(expression, exception_list, default):
+    try:
+        return eval(expression, globals_of_caller(), locals_of_caller()
+    except exception_list as exc:
+        l = locals_of_caller().copy()
+        l['exc'] = exc
+        return eval(default, globals_of_caller(), l)
+
+which is even clunkier, and relies on implementation-dependent hacks.
+
+Raymond Hettinger `expresses`__ a desire for such a consistent API. Something
+similar has been `requested`__ `multiple`__ `times`__ in the past.
+
+__ https://mail.python.org/pipermail/python-ideas/2014-February/025443.html
+__ https://mail.python.org/pipermail/python-ideas/2013-March/019760.html
+__ https://mail.python.org/pipermail/python-ideas/2009-August/005441.html
+__ https://mail.python.org/pipermail/python-ideas/2008-August/001801.html
+
 
 Proposal
 ========
@@ -67,6 +100,20 @@ The proposal adds this::
     lst = [1, 2]
     value = lst[2] except IndexError: "No value"
 
+Specifically, the syntax proposed is:
+    expr except exc [as e]: default [except exc2 [as e]: default2] ...
+
+where expr, exc, and default are all expressions. First, expr is evaluated.
+If no exception is raised, its value is the value of the overall expression.
+If any exception is raised, exc is evaluated, and should result in either a
+type or a tuple, just as with the statement form of try/except. Any matching
+exception will result in the corresponding default expression being evaluated
+and becoming the value of the expression. As with the statement form of try/
+except, subsequent except clauses will be checked if the first one does not
+match, and if none match, the raised exception will propagate upward. Also as
+with the try/except statement, the keyword 'as' can be used to bind the
+exception object to a local name.
+
 The exception object can be captured just as in a normal try/except block::
     # Return the next yielded or returned value from a generator
     value = next(it) except StopIteration as e: e.args[0]
@@ -79,9 +126,6 @@ This is effectively equivalent to::
     value = _
 
 This ternary operator would be between lambda and if/else in precedence.
-
-The default expression will not be evaluated unless an exception is raised;
-if 'as' is used, this expression may refer to the exception object.
 
 
 Chaining
@@ -107,6 +151,11 @@ Using parentheses to force an alternative interpretation works as expected::
     value = (expr except Exception1:
         (default1 except Exception2: default2)
     )
+
+This last form is confusing and should be discouraged by PEP 8, but it is
+syntactically legal: you can put any sort of expression inside a
+ternary-except; ternary-except is an expression; therefore you can put a
+ternary-except inside a ternary-except.
 
 
 Alternative Proposals
@@ -150,6 +199,14 @@ catching rig - a matching exception raised in the default clause would be
 caught by the subsequent except clause. As this difference is so subtle, it
 runs the risk of being a major bug magnet.
 
+As a mitigation of this risk, this form::
+    value = expr except Exception1: default1 except Exception2: default2
+could be syntactically forbidden, and parentheses required if the programmer
+actually wants that behaviour::
+    value = (expr except Exception1: default1) except Exception2: default2
+This would prevent the accidental omission of a comma from changing the
+expression's meaning.
+
 
 Parentheses around the except clauses
 -------------------------------------
@@ -161,6 +218,28 @@ expression that could raise? Example::
         except Exception2 [as e]: default2
         # ... except ExceptionN [as e]: defaultN
     )
+
+
+Scope of default expressions and 'as'
+-------------------------------------
+
+In a try/except block, the use of 'as' to capture the exception object creates
+a local name binding, and implicitly deletes that binding in a finally clause.
+As 'finally' is not a part of this proposal (see below), this makes it tricky
+to describe; also, this use of 'as' gives a way to create a name binding in an
+expression context. Should the default clause have an inner scope in which the
+name exists, shadowing anything of the same name elsewhere? Should it behave
+the same way the statement try/except does, and unbind the name? Should it
+bind the name and leave it bound? (Almost certainly not; this behaviour was
+changed in Python 3 for good reason.)
+
+
+Rejected sub-proposals
+======================
+
+The statement form try... finally or try... except... finally has no logical
+corresponding expression form. Therefore the finally keyword is not a part
+of this proposal, in any way.
 
 
 Copyright
