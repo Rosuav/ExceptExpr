@@ -62,11 +62,11 @@ This currently works::
 
 The proposal adds this::
     lst = [1, 2]
-    value = lst[2] except IndexError pass "No value"
+    value = lst[2] except IndexError: "No value"
 
 The exception object can be captured just as in a normal try/except block::
     # Return the next yielded or returned value from a generator
-    value = next(it) except StopIteration as e pass e.args[0]
+    value = next(it) except StopIteration as e: e.args[0]
 
 This is effectively equivalent to::
     try:
@@ -76,6 +76,28 @@ This is effectively equivalent to::
     value = _
 
 This ternary operator would be between lambda and if/else in precedence.
+
+
+Chaining
+--------
+
+Multiple 'except' keywords can be used, and they will all catch exceptions
+raised in the original expression (only)::
+    value = (expr
+        except Exception1 [as e]: default1
+        except Exception2 [as e]: default2
+        # ... except ExceptionN [as e]: defaultN
+    )
+
+This is not the same as either parenthesized form::
+    value = (("Yield: "+next(it) except StopIteration as e: "End: "+e.args[0])
+	except TypeError: "Error: Non-string returned or raised")
+    value = (next(it) except StopIteration as e:
+	        (e.args[0] except IndexError: None))
+
+The first form will catch an exception raised in either the original
+expression or in the default expression; the second form will catch ONLY one
+raised by the default expression. All three effects have their uses.
 
 
 Alternative Proposals
@@ -90,34 +112,27 @@ Discussion on python-ideas brought up the following syntax suggestions::
     value = expr except Exception [as e] try default
     value = expr except Exception [as e] continue with default
     value = default except Exception [as e] else expr
+    value = try expr except Exception [as e]: default
+    value = expr except Exception [as e] pass default
 
 In all cases, default is an expression which will not be evaluated unless
 an exception is raised; if 'as' is used, this expression may refer to the
 exception object.
 
 It has also been suggested that a new keyword be created, rather than reusing
-an existing one. Such proposals fall into the same structure as the advocated
-one, but with a different keyword in place of 'pass'. Suggestions include
+an existing one. Such proposals fall into the same structure as the last
+form, but with a different keyword in place of 'pass'. Suggestions include
 'then', 'when', and 'use'.
 
 
 Open Issues
 ===========
 
-Chaining vs catching multiple exception types
----------------------------------------------
+finally clause
+--------------
 
-Extending the proposed syntax could be interpreted as either catching multiple
-exceptions from the same block, or as catching an exception thrown from the
-default value's evaluation::
-    value = ((next(it) except StopIteration as e pass e.args[0])
-	except NameError pass "Oops no iterator")
-    value = (next(it)
-        except StopIteration as e pass
-	    (e.args[0] except IndexError pass None))
-
-Whichever form is made the default (via operator associativity), the other can
-be invoked using parentheses.
+Should the except expression be able to have a finally clause? No form of the
+proposal so far has included finally.
 
 
 Copyright
