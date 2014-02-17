@@ -133,6 +133,9 @@ match, and if none match, the raised exception will propagate upward. Also as
 with the try/except statement, the keyword 'as' can be used to bind the
 exception object to a local name.
 
+Omitting the exception list should be legal, just as with the statement form
+of try/except, though this should of course be discouraged by PEP 8.
+
 The exception object can be captured just as in a normal try/except block::
     # Return the next yielded or returned value from a generator
     value = next(it) except StopIteration as e: e.args[0]
@@ -227,6 +230,18 @@ This would prevent the accidental omission of a comma from changing the
 expression's meaning.
 
 
+Parentheses around the entire expression
+----------------------------------------
+
+Generator expressions require parentheses, unless they would be strictly
+redundant. Ambiguities with except expressions could be resolved in the same
+way, forcing nested except-in-except trees to be correctly parenthesized and
+requiring that the outer expression be clearly delineated. `Steven D'Aprano
+elaborates on the issue.`__
+
+__ https://mail.python.org/pipermail/python-ideas/2014-February/025647.html
+
+
 Parentheses around the except clauses
 -------------------------------------
 
@@ -251,6 +266,11 @@ name exists, shadowing anything of the same name elsewhere? Should it behave
 the same way the statement try/except does, and unbind the name? Should it
 bind the name and leave it bound? (Almost certainly not; this behaviour was
 changed in Python 3 for good reason.)
+
+(The inner scope idea is tempting, but currently this seems to require a
+function call (at least, that's how CPython handles list comprehensions). It
+may be of value to simplify both comprehensions and except expressions, but
+that is a completely separate proposal to this PEP.)
 
 
 Rejected sub-proposals
