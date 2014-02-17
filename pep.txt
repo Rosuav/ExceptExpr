@@ -167,7 +167,7 @@ Using parentheses to force an alternative interpretation works as expected::
     # Will catch an Exception2 thrown by either expr or default1
     value = (
         (expr except Exception1: default1)
-	except Exception2: default2
+        except Exception2: default2
     )
     # Will catch an Exception2 thrown by default1 only
     value = (expr except Exception1:
