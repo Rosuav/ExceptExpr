@@ -57,7 +57,7 @@ block is needed.
 
 Since try/except is a statement, it is impossible to catch exceptions in the
 middle of an expression. Just as if/else does for conditionals and lambda does
-for function definitions, so does this allows exception catching in an
+for function definitions, so does this allow exception catching in an
 expression context.
 
 This provides a clean and consistent way for a function to provide a default:
@@ -267,10 +267,13 @@ the same way the statement try/except does, and unbind the name? Should it
 bind the name and leave it bound? (Almost certainly not; this behaviour was
 changed in Python 3 for good reason.)
 
-(The inner scope idea is tempting, but currently this seems to require a
-function call (at least, that's how CPython handles list comprehensions). It
+(The inner scope idea is tempting, but currently CPython handles list
+comprehensions with a nested function call, as this is considered easier. It
 may be of value to simplify both comprehensions and except expressions, but
-that is a completely separate proposal to this PEP.)
+that is a completely separate proposal to this PEP; alternatively, it may be
+better to stick with what's known to work. `Nick Coghlan elaborates.`__)
+
+__ https://mail.python.org/pipermail/python-ideas/2014-February/025702.html
 
 
 Example usage
