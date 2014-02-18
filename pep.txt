@@ -200,6 +200,14 @@ an existing one. Such proposals fall into the same structure as the last
 form, but with a different keyword in place of 'pass'. Suggestions include
 'then', 'when', and 'use'.
 
+Additionally, the following has been suggested as a similar short-hand, though
+not technically an expression::
+    statement except Exception: pass
+    try:
+        statement
+    except Exception:
+        pass
+
 
 Open Issues
 ===========
