@@ -156,6 +156,7 @@ precedence.
 Consider this example of a two-level cache::
     for key in sequence:
         x = (lvl1[key] except KeyError: (lvl2[key] except KeyError: f(key)))
+        # do something with x
 
 This cannot be rewritten as::
         x = lvl1.get(key, lvl2.get(key, f(key)))
@@ -163,7 +164,10 @@ This cannot be rewritten as::
 which, despite being shorter, defeats the purpose of the cache, as it must
 calculate a default value to pass to get(). The .get() version calculates
 backwards; the exception-testing version calculates forwards, as would be
-expected.
+expected. The nearest useful equivalent would be::
+        x = lvl1.get(key) or lvl2.get(key) or f(key)
+which depends on the values being nonzero, as well as depending on the cache
+object supporting this functionality.
 
 
 Alternative Proposals
