@@ -46,12 +46,6 @@ support this.
 
 * statistics.mean(data) - no way to handle an empty iterator
 
-Additionally, this syntax would allow a convenient way to capture
-exceptions in interactive Python; returned values are captured by "_",
-but exceptions currently are not. This could be spelled:
-
->>> expr except Exception as e: e
-
 
 Rationale
 =========
@@ -84,9 +78,9 @@ nearest is something ugly using either lambda::
     def except_(expression, exception_list, default):
         try:
             return expression()
-        except exception_list as e:
-            return default(e)
-    value = except_(lambda: 1/x, ZeroDivisionError, lambda e: float("nan"))
+        except exception_list:
+            return default()
+    value = except_(lambda: 1/x, ZeroDivisionError, lambda: float("nan"))
 
 which is clunky, and unable to handle multiple exception clauses; or
 eval::
@@ -141,37 +135,20 @@ The proposal adds this::
 
 Specifically, the syntax proposed is::
 
-    expr except exc [as e]: default [except exc2 [as e]: default2] ...
+    expr except exception_list: default
 
-where expr, exc, and default are all expressions.  First, expr is
-evaluated.  If no exception is raised, its value is the value of the
-overall expression.  If any exception is raised, exc is evaluated, and
-should result in either a type or a tuple, just as with the statement
-form of try/except.  Any matching exception will result in the
-corresponding default expression being evaluated and becoming the
-value of the expression.  As with the statement form of try/ except,
-subsequent except clauses will be checked if the first one does not
-match, and if none match, the raised exception will propagate upward.
-Also as with the try/except statement, the keyword 'as' can be used to
-bind the exception object to a local name.
+where expr, exception_list, and default are all expressions.  First,
+expr is evaluated.  If no exception is raised, its value is the value
+of the overall expression.  If any exception is raised, exception_list
+is evaluated, and should result in either a type or a tuple, just as
+with the statement form of try/except.  Any matching exception will
+result in the corresponding default expression being evaluated and
+becoming the value of the expression.  As with the statement form of
+try/except, non-matching exceptions will propagate upward.
 
-Omitting the exception list should be legal, just as with the
-statement form of try/except, though this should of course be
-discouraged by PEP 8.
-
-The exception object can be captured just as in a normal try/except
-block::
-
-    # Return the next yielded or returned value from a generator
-    value = next(it) except StopIteration as e: e.args[0]
-
-This is effectively equivalent to::
-
-    try:
-        _ = next(it)
-    except StopIteration as e:
-        _ = e.args[0]
-    value = _
+Note that the current proposal does not allow the exception object to
+be captured. Where this is needed, the statement form must be used.
+(See below for discussion and elaboration on this.)
 
 This ternary operator would be between lambda and if/else in
 precedence.
@@ -213,6 +190,10 @@ reusing an existing one.  Such proposals fall into the same structure
 as the last form, but with a different keyword in place of 'pass'.
 Suggestions include 'then', 'when', and 'use'.
 
+All forms involving the 'as' capturing clause have been deferred from
+this proposal in the interests of simplicity, but are preserved in the
+table above as an accurate record of suggestions.
+
 Additionally, the following has been suggested as a similar
 short-hand, though not technically an expression::
 
@@ -226,39 +207,6 @@ short-hand, though not technically an expression::
 
 Open Issues
 ===========
-
-Commas between multiple except clauses
---------------------------------------
-
-Where there are multiple except clauses, should they be separated by
-commas?  It may be easier for the parser, that way::
-
-    value = (expr
-        except Exception1 [as e]: default1,
-        except Exception2 [as e]: default2,
-        # ... except ExceptionN [as e]: defaultN,
-    )
-
-with an optional comma after the last, as per tuple rules.  Downside:
-Omitting the comma would be syntactically valid, and would have almost
-identical semantics, but would nest the entire preceding expression in
-its exception catching rig - a matching exception raised in the
-default clause would be caught by the subsequent except clause.  As
-this difference is so subtle, it runs the risk of being a major bug
-magnet.
-
-As a mitigation of this risk, this form::
-
-    value = expr except Exception1: default1 except Exception2: default2
-
-could be syntactically forbidden, and parentheses required if the
-programmer actually wants that behaviour::
-
-    value = (expr except Exception1: default1) except Exception2: default2
-
-This would prevent the accidental omission of a comma from changing
-the expression's meaning.
-
 
 Parentheses around the entire expression
 ----------------------------------------
@@ -283,30 +231,6 @@ the expression that could raise? Example::
         except Exception2 [as e]: default2
         # ... except ExceptionN [as e]: defaultN
     )
-
-
-Scope of default expressions and 'as'
--------------------------------------
-
-In a try/except block, the use of 'as' to capture the exception object
-creates a local name binding, and implicitly deletes that binding in a
-finally clause.  As 'finally' is not a part of this proposal (see
-below), this makes it tricky to describe; also, this use of 'as' gives
-a way to create a name binding in an expression context.  Should the
-default clause have an inner scope in which the name exists, shadowing
-anything of the same name elsewhere? Should it behave the same way the
-statement try/except does, and unbind the name?  Should it bind the
-name and leave it bound? (Almost certainly not; this behaviour was
-changed in Python 3 for good reason.)
-
-(The inner scope idea is tempting, but currently CPython handles list
-comprehensions with a nested function call, as this is considered
-easier.  It may be of value to simplify both comprehensions and except
-expressions, but that is a completely separate proposal to this PEP;
-alternatively, it may be better to stick with what's known to
-work. `Nick Coghlan elaborates.`__)
-
-__ https://mail.python.org/pipermail/python-ideas/2014-February/025702.html
 
 
 Example usage
@@ -444,6 +368,73 @@ This last form is confusing and should be discouraged by PEP 8, but it
 is syntactically legal: you can put any sort of expression inside a
 ternary-except; ternary-except is an expression; therefore you can put
 a ternary-except inside a ternary-except.
+
+Open question: Where there are multiple except clauses, should they be
+separated by commas?  It may be easier for the parser, that way::
+
+    value = (expr
+        except Exception1 [as e]: default1,
+        except Exception2 [as e]: default2,
+        # ... except ExceptionN [as e]: defaultN,
+    )
+
+with an optional comma after the last, as per tuple rules.  Downside:
+Omitting the comma would be syntactically valid, and would have almost
+identical semantics, but would nest the entire preceding expression in
+its exception catching rig - a matching exception raised in the
+default clause would be caught by the subsequent except clause.  As
+this difference is so subtle, it runs the risk of being a major bug
+magnet.
+
+As a mitigation of this risk, this form::
+
+    value = expr except Exception1: default1 except Exception2: default2
+
+could be syntactically forbidden, and parentheses required if the
+programmer actually wants that behaviour::
+
+    value = (expr except Exception1: default1) except Exception2: default2
+
+This would prevent the accidental omission of a comma from changing
+the expression's meaning.
+
+
+Capturing the exception object
+------------------------------
+
+In a try/except block, the use of 'as' to capture the exception object
+creates a local name binding, and implicitly deletes that binding in a
+finally clause.  As 'finally' is not a part of this proposal (see
+below), this makes it tricky to describe; also, this use of 'as' gives
+a way to create a name binding in an expression context.  Should the
+default clause have an inner scope in which the name exists, shadowing
+anything of the same name elsewhere?  Should it behave the same way the
+statement try/except does, and unbind the name?  Should it bind the
+name and leave it bound? (Almost certainly not; this behaviour was
+changed in Python 3 for good reason.)
+
+Additionally, this syntax would allow a convenient way to capture
+exceptions in interactive Python; returned values are captured by "_",
+but exceptions currently are not. This could be spelled:
+
+>>> expr except Exception as e: e
+
+(The inner scope idea is tempting, but currently CPython handles list
+comprehensions with a nested function call, as this is considered
+easier.  It may be of value to simplify both comprehensions and except
+expressions, but that is a completely separate proposal to this PEP;
+alternatively, it may be better to stick with what's known to
+work. `Nick Coghlan elaborates.`__)
+
+__ https://mail.python.org/pipermail/python-ideas/2014-February/025702.html
+
+An examination of the Python standard library shows that, while the use
+of 'as' is fairly common (occurring in roughly one except clause in five),
+it is extremely *uncommon* in the cases which could logically be converted
+into the expression form.  Its few uses can simply be left unchanged.
+Consequently, in the interests of simplicity, the 'as' clause is not
+included in this proposal.  A subsequent Python version can add this without
+breaking any existing code, as 'as' is already a keyword.
 
 
 Rejected sub-proposals
