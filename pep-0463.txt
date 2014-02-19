@@ -273,7 +273,9 @@ exhausted::
         except StopIteration:
             line = ''
 
-Retrieve platform-specific information (note the DRY improvement)::
+Retrieve platform-specific information (note the DRY improvement);
+this particular example could be taken further, turning a series of
+separate assignments into a single large dict initialization::
         # sys.abiflags may not be defined on all platforms.
         _CONFIG_VARS['abiflags'] = sys.abiflags except AttributeError: ''
 
