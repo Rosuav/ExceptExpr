@@ -396,16 +396,16 @@ Looking up objects in a sparse list of overrides::
 Deferred sub-proposals
 ======================
 
-Chaining
---------
+Multiple except clauses
+-----------------------
 
 An examination of use-cases shows that this is not needed as often as
 it would be with the statement form, and as its syntax is a point on
 which consensus has not been reached, the entire feature is deferred.
 
 In order to ensure compatibility with future versions, ensure that any
-chained except operators are parenthesized to guarantee the interpretation
-you expect.
+consecutive except operators are parenthesized to guarantee the
+interpretation you expect.
 
 Multiple 'except' keywords can be used, and they will all catch
 exceptions raised in the original expression (only)::
