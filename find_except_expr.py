@@ -6,12 +6,44 @@ $ find cpython/ -name \*.py|xargs python3 ExceptExpr/find_except_expr.py >Except
 """
 
 import ast
+import sys
 
 verbose = False
+
+compare_key = {
+	# Currently looking for the same target.
+	# Since I am fairly clueless with the ast module, I'm
+	# looking for string equality of ast.dump(), which is
+	# hardly the best way to do things!
+	ast.Assign: lambda node: ' '.join(ast.dump(t) for t in node.targets),
+	# Same target and same operator.
+	ast.AugAssign: lambda node: ast.dump(node.target) + ast.dump(node.op),
+	# A return statement is always compatible with another.
+	ast.Return: lambda node: "(easy)",
+	# Calling these never compatible is wrong. Calling them
+	# always compatible will give lots of false positives.
+	ast.Expr: lambda node: "(maybe)",
+	# These ones are never compatible, so return some
+	# object that's never equal to anything.
+	ast.Import: lambda node: float("nan"),
+	ast.ImportFrom: lambda node: float("nan"),
+	ast.Pass: lambda node: float("nan"),
+	ast.Raise: lambda node: float("nan"),
+	ast.If: lambda node: float("nan"),
+}
+
+excepts = excepts_with_as = 0
 
 class walker(ast.NodeVisitor): # For "Ghost who walks", if you read comics
 	def __init__(self, filename):
 		self.filename = filename
+
+	def visit_ExceptHandler(self, node):
+		"""Keep stats on usage of 'as' in except clauses"""
+		global excepts, excepts_with_as
+		excepts += 1
+		if node.name is not None: excepts_with_as += 1
+		self.generic_visit(node)
 
 	def visit_Try(self, node):
 		"""Report on 'simple' try/except statements.
@@ -25,9 +57,7 @@ class walker(ast.NodeVisitor): # For "Ghost who walks", if you read comics
 		6. That type is one that could be an expression.
 		7. Those statements are all compatible.
 
-		The last two are the trickiest. Currently I'm looking
-		only for assignments, where both try and except assign
-		to the same target. This is, however, too narrow."""
+		The last two are the trickiest."""
 		self.generic_visit(node) # Recurse first for simplicity.
 
 		# 1. No else or finally clause
@@ -57,21 +87,21 @@ class walker(ast.NodeVisitor): # For "Ghost who walks", if you read comics
 			if type(handler.body[0]) is not try_type: return
 
 		# 6. That type is one that could be an expression.
-		# Currently cheating, as per docstring.
-		if try_type is not ast.Assign: return
-
 		# 7. Those statements are all compatible.
-		# Currently looking for the same target.
-		# Since I am fairly clueless with the ast module, I'm
-		# looking for string equality of ast.dump(), which is
-		# hardly the best way to do things!
-		try_target = ast.dump(node.body[0].targets[0])
+		# These two done with a lookup table. If the type isn't in
+		# the table, dump it out for debugging (once); otherwise,
+		# the function should return a value which is equal for any
+		# two compatible nodes.
+		if try_type not in compare_key:
+			print("Unrecognized type",try_type.__name__,file=sys.stderr)
+			compare_key[try_type] = lambda node: float("nan")
+		func = compare_key[try_type]
+		try_node = func(node.body[0])
 		for handler in node.handlers:
-			if try_target != ast.dump(handler.body[0].targets[0]):
-				return
+			if try_node != func(handler.body[0]): return
+		print("%s:%d: %s: %s"%(self.filename,node.lineno,try_type.__name__,try_node))
 
 		# What's the easiest way to get a readable form for display?
-		print("%s:%d: %s"%(self.filename,node.lineno,try_target))
 
 def search(fn):
 	with open(fn,"rb") as f:
@@ -90,7 +120,8 @@ def search(fn):
 	walker(fn).visit(tree)
 
 if __name__ == "__main__":
-	import sys
 	for fn in sys.argv[1:]:
 		# print("Searching", fn, "...")
 		search(fn)
+	if excepts:
+		print("Of",excepts,"except clauses,",excepts_with_as,"use the 'as' clause:",excepts_with_as*100/excepts,"%",file=sys.stderr)
