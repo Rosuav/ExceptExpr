@@ -7,6 +7,8 @@ $ find cpython/ -name \*.py|xargs python3 ExceptExpr/find_except_expr.py >Except
 
 import ast
 
+verbose = False
+
 class walker(ast.NodeVisitor): # For "Ghost who walks", if you read comics
 	def __init__(self, filename):
 		self.filename = filename
@@ -80,9 +82,10 @@ def search(fn):
 		# Some files in the stdlib are deliberately broken
 		# (including lib2to3 test data, which is "broken" from
 		# the point of view of a Python 3 parser). Just log it
-		# and move on.
-		print("Unable to parse", fn, file=sys.stderr)
-		print(e, file=sys.stderr)
+		# (optionally) and move on.
+		if verbose:
+			print("Unable to parse", fn, file=sys.stderr)
+			print(e, file=sys.stderr)
 		return
 	walker(fn).visit(tree)
 
