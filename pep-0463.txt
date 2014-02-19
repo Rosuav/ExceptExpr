@@ -196,6 +196,7 @@ Discussion on python-ideas brought up the following syntax suggestions::
     value = try expr except Exception [as e]: default
     value = expr except default # Catches anything
     value = expr except(Exception) default # Catches only the named type(s)
+    value = expr except Exception [as e] -> default
     value = expr except Exception [as e] pass default
 
 It has also been suggested that a new keyword be created, rather than
