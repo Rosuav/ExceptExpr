@@ -33,6 +33,7 @@ compare_key = {
 }
 
 excepts = excepts_with_as = 0
+simple_excepts = simple_excepts_with_as = 0
 
 class walker(ast.NodeVisitor): # For "Ghost who walks", if you read comics
 	def __init__(self, filename):
@@ -100,6 +101,10 @@ class walker(ast.NodeVisitor): # For "Ghost who walks", if you read comics
 		for handler in node.handlers:
 			if try_node != func(handler.body[0]): return
 		print("%s:%d: %s: %s"%(self.filename,node.lineno,try_type.__name__,try_node))
+		global simple_excepts, simple_excepts_with_as
+		for handler in node.handlers:
+			simple_excepts += 1
+			if handler.name is not None: simple_excepts_with_as += 1
 
 		# What's the easiest way to get a readable form for display?
 
@@ -125,3 +130,5 @@ if __name__ == "__main__":
 		search(fn)
 	if excepts:
 		print("Of",excepts,"except clauses,",excepts_with_as,"use the 'as' clause:",excepts_with_as*100/excepts,"%",file=sys.stderr)
+	if simple_excepts:
+		print("Simple excepts:",simple_excepts_with_as,"/",simple_excepts,"=",simple_excepts_with_as*100/simple_excepts,"%",file=sys.stderr)
