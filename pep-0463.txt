@@ -69,6 +69,15 @@ This provides a clean and consistent way for a function to provide a
 default: it simply raises an appropriate exception, and the caller
 catches it.
 
+With some situations, an LBLY technique can be used (checking if some
+sequence has enough length before indexing into it, for instance). This is
+not safe in all cases, but as it is often convenient, programmers will be
+tempted to sacrifice the safety of EAFP in favour of the notational brevity
+of LBLY. Additionally, some LBLY techniques (eg involving getattr with
+three arguments) warp the code into looking like literal strings rather
+than attribute lookup, which can impact readability. A convenient EAFP
+notation solves all of this.
+
 There's no convenient way to write a helper function to do this; the
 nearest is something ugly using either lambda::
 
