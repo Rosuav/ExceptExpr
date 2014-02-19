@@ -224,19 +224,6 @@ clearly delineated.  `Steven D'Aprano elaborates on the issue.`__
 __ https://mail.python.org/pipermail/python-ideas/2014-February/025647.html
 
 
-Parentheses around the except clauses
--------------------------------------
-
-Should it be legal to parenthesize the except clauses, separately from
-the expression that could raise? Example::
-
-    value = expr (
-        except Exception1 [as e]: default1
-        except Exception2 [as e]: default2
-        # ... except ExceptionN [as e]: defaultN
-    )
-
-
 Example usage
 =============
 
@@ -596,6 +583,31 @@ remain so, there is little value in encouraging its use. In an expression
 except clause, "except:" is a SyntaxError; use the equivalent long-hand
 form "except BaseException:" instead. A future version of Python MAY choose
 to reinstate this, which can be done without breaking compatibility.
+
+
+Parentheses around the except clauses
+-------------------------------------
+
+Should it be legal to parenthesize the except clauses, separately from
+the expression that could raise? Example::
+
+    value = expr (
+        except Exception1 [as e]: default1
+        except Exception2 [as e]: default2
+        # ... except ExceptionN [as e]: defaultN
+    )
+
+This is more compelling when one or both of the deferred sub-proposals
+of multiple except clauses and/or exception capturing is included.  In
+their absence, the parentheses would be thus::
+    value = expr except ExceptionType: default
+    value = expr (except ExceptionType: default)
+
+The advantage is minimal, and the potential to confuse a reader into
+thinking the except clause is separate from the expression, or into thinking
+this is a function call, makes this non-compelling.  The expression can, of
+course, be parenthesized if desired, as can the default::
+    value = (expr) except ExceptionType: (default)
 
 
 Copyright
