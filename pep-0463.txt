@@ -180,39 +180,6 @@ backwards; the exception-testing version calculates forwards, as would be
 expected.
 
 
-Chaining
---------
-
-Multiple 'except' keywords can be used, and they will all catch
-exceptions raised in the original expression (only)::
-
-    # Will catch any of the listed exceptions thrown by expr;
-    # any exception thrown by a default expression will propagate.
-    value = (expr
-        except Exception1 [as e]: default1
-        except Exception2 [as e]: default2
-        # ... except ExceptionN [as e]: defaultN
-    )
-
-Using parentheses to force an alternative interpretation works as
-expected::
-
-    # Will catch an Exception2 thrown by either expr or default1
-    value = (
-        (expr except Exception1: default1)
-        except Exception2: default2
-    )
-    # Will catch an Exception2 thrown by default1 only
-    value = (expr except Exception1:
-        (default1 except Exception2: default2)
-    )
-
-This last form is confusing and should be discouraged by PEP 8, but it
-is syntactically legal: you can put any sort of expression inside a
-ternary-except; ternary-except is an expression; therefore you can put
-a ternary-except inside a ternary-except.
-
-
 Alternative Proposals
 =====================
 
@@ -249,16 +216,6 @@ short-hand, though not technically an expression::
 
 Open Issues
 ===========
-
-Bare except clauses
--------------------
-
-PEP 8 rightly advises against the use of a bare 'except'. It is, however,
-syntactically legal. Should a bare 'except' be permitted in an expression
-except, or should this opportunity be taken to force an explicit "except
-BaseException"? Consistency with statement form is of value, but it's an
-attractive nuisance and usually better avoided anyway.
-
 
 Commas between multiple except clauses
 --------------------------------------
@@ -408,7 +365,7 @@ check::
             (backend.read(k) except OSError: 'Resource not available')
         )
         if check_permission(k) else 'Access denied'
-    ) except: "I'm an idiot and using a bare except clause")
+    ) except BaseException: "This is like a bare except clause")
 
     try:
         if check_permission(k):
@@ -421,8 +378,8 @@ check::
                     _ = 'Resource not available'
         else:
             _ = 'Access denied'
-    except:
-        _ = "I'm an idiot and using a bare except clause"
+    except BaseException:
+        _ = "This is like a bare except clause"
     logging.info("Message shown to user: %s", _)
 
 Looking up objects in a sparse list of overrides::
@@ -433,6 +390,50 @@ Looking up objects in a sparse list of overrides::
         (overrides[x] or default).ping()
     except IndexError:
         default.ping()
+
+
+Deferred sub-proposals
+======================
+
+Chaining
+--------
+
+An examination of use-cases shows that this is not needed as often as
+it would be with the statement form, and as its syntax is a point on
+which consensus has not been reached, the entire feature is deferred.
+
+In order to ensure compatibility with future versions, ensure that any
+chained except operators are parenthesized to guarantee the interpretation
+you expect.
+
+Multiple 'except' keywords can be used, and they will all catch
+exceptions raised in the original expression (only)::
+
+    # Will catch any of the listed exceptions thrown by expr;
+    # any exception thrown by a default expression will propagate.
+    value = (expr
+        except Exception1 [as e]: default1
+        except Exception2 [as e]: default2
+        # ... except ExceptionN [as e]: defaultN
+    )
+
+Using parentheses to force an alternative interpretation works as
+expected::
+
+    # Will catch an Exception2 thrown by either expr or default1
+    value = (
+        (expr except Exception1: default1)
+        except Exception2: default2
+    )
+    # Will catch an Exception2 thrown by default1 only
+    value = (expr except Exception1:
+        (default1 except Exception2: default2)
+    )
+
+This last form is confusing and should be discouraged by PEP 8, but it
+is syntactically legal: you can put any sort of expression inside a
+ternary-except; ternary-except is an expression; therefore you can put
+a ternary-except inside a ternary-except.
 
 
 Rejected sub-proposals
@@ -482,6 +483,17 @@ Consequently, the use of a bare 'except' is down to two possibilities:
 either it is syntactically forbidden in the expression form, or it is
 permitted with the exact same semantics as in the statement form (namely,
 that it catch BaseException and be unable to capture it with 'as').
+
+
+Bare except clauses
+-------------------
+
+PEP 8 rightly advises against the use of a bare 'except'. While it is
+syntactically legal in a statement, and for backward compatibility must
+remain so, there is little value in encouraging its use. In an expression
+except clause, "except:" is a SyntaxError; use the equivalent long-hand
+form "except BaseException:" instead. A future version of Python MAY choose
+to reinstate this, which can be done without breaking compatibility.
 
 
 Copyright
