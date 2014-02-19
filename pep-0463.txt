@@ -167,6 +167,18 @@ This is effectively equivalent to::
 This ternary operator would be between lambda and if/else in
 precedence.
 
+Consider this example of a two-level cache::
+    for key in sequence:
+        x = (lvl1[key] except KeyError: (lvl2[key] except KeyError: f(key)))
+
+This cannot be rewritten as::
+        x = lvl1.get(key, lvl2.get(key, f(key)))
+
+which, despite being shorter, defeats the purpose of the cache, as it must
+calculate a default value to pass to get(). The .get() version calculates
+backwards; the exception-testing version calculates forwards, as would be
+expected.
+
 
 Chaining
 --------
@@ -215,6 +227,8 @@ Discussion on python-ideas brought up the following syntax suggestions::
     value = expr except Exception [as e] continue with default
     value = default except Exception [as e] else expr
     value = try expr except Exception [as e]: default
+    value = expr except default # Catches anything
+    value = expr except(Exception) default # Catches only the named type(s)
     value = expr except Exception [as e] pass default
 
 It has also been suggested that a new keyword be created, rather than
@@ -235,6 +249,16 @@ short-hand, though not technically an expression::
 
 Open Issues
 ===========
+
+Bare except clauses
+-------------------
+
+PEP 8 rightly advises against the use of a bare 'except'. It is, however,
+syntactically legal. Should a bare 'except' be permitted in an expression
+except, or should this opportunity be taken to force an explicit "except
+BaseException"? Consistency with statement form is of value, but it's an
+attractive nuisance and usually better avoided anyway.
+
 
 Commas between multiple except clauses
 --------------------------------------
@@ -414,9 +438,50 @@ Looking up objects in a sparse list of overrides::
 Rejected sub-proposals
 ======================
 
+finally clause
+--------------
 The statement form try... finally or try... except... finally has no
 logical corresponding expression form.  Therefore the finally keyword
 is not a part of this proposal, in any way.
+
+
+Bare except having different meaning
+------------------------------------
+
+With several of the proposed syntaxes, omitting the exception type name
+would be easy and concise, and would be tempting. For convenience's sake,
+it might be advantageous to have a bare 'except' clause mean something
+more useful than "except BaseException". Proposals included having it
+catch Exception, or some specific set of "common exceptions" (subclasses
+of a new type called ExpressionError), or have it look for a tuple named
+ExpressionError in the current scope, with a built-in default such as
+(ValueError, UnicodeError, AttributeError, EOFError, IOError, OSError,
+LookupError, NameError, ZeroDivisionError). All of these were rejected,
+for severa reasons.
+
+* First and foremost, consistency with the statement form of try/except
+would be broken. Just as a list comprehension or ternary if expression
+can be explained by "breaking it out" into its vertical statement form,
+an expression-except should be able to be explained by a relatively
+mechanical translation into a near-equivalent statement. Any form of
+syntax common to both should therefore have the same semantics in each,
+and above all should not have the subtle difference of catching more in
+one than the other, as it will tend to attract unnoticed bugs.
+
+* Secondly, the set of appropriate exceptions to catch would itself be
+a huge point of contention. It would be impossible to predict exactly
+which exceptions would "make sense" to be caught; why bless some of them
+with convenient syntax and not others?
+
+* And finally (this partly because the recommendation was that a bare
+except should be actively encouraged, once it was reduced to a "reasonable"
+set of exceptions), any situation where you catch an exception you don't
+expect to catch is an unnecessary bug magnet.
+
+Consequently, the use of a bare 'except' is down to two possibilities:
+either it is syntactically forbidden in the expression form, or it is
+permitted with the exact same semantics as in the statement form (namely,
+that it catch BaseException and be unable to capture it with 'as').
 
 
 Copyright
