@@ -241,6 +241,84 @@ to show how the expression will be parsed.  These are not always
 strictly equivalent, but will accomplish the same purpose.  It is NOT
 safe for the interpreter to translate one into the other.
 
+A number of these examples are taken directly from the Python standard
+library, with file names and line numbers correct as of early Feb 2014.
+Many of these patterns are extremely common.
+
+Retrieve an argument, defaulting to None::
+        cond = args[1] except IndexError: None
+
+        # Lib/pdb.py:803:
+        try:
+            cond = args[1]
+        except IndexError:
+            cond = None
+
+Fetch information from the system if available::
+            pwd = os.getcwd() except OSError: None
+
+            # Lib/tkinter/filedialog.py:210:
+            try:
+                pwd = os.getcwd()
+            except OSError:
+                pwd = None
+
+Attempt a translation, falling back on the original::
+        e.widget = self._nametowidget(W) except KeyError: W
+
+        # Lib/tkinter/__init__.py:1222:
+        try:
+            e.widget = self._nametowidget(W)
+        except KeyError:
+            e.widget = W
+
+Read from an iterator, continuing with blank lines once it's
+exhausted::
+        line = readline() except StopIteration: ''
+
+        # Lib/lib2to3/pgen2/tokenize.py:370:
+        try:
+            line = readline()
+        except StopIteration:
+            line = ''
+
+Retrieve platform-specific information (note the DRY improvement)::
+        # sys.abiflags may not be defined on all platforms.
+        _CONFIG_VARS['abiflags'] = sys.abiflags except AttributeError: ''
+
+        # Lib/sysconfig.py:529:
+        try:
+            _CONFIG_VARS['abiflags'] = sys.abiflags
+        except AttributeError:
+            # sys.abiflags may not be defined on all platforms.
+            _CONFIG_VARS['abiflags'] = ''
+
+Retrieve an indexed item, defaulting to None (similar to dict.get)::
+    def getNamedItem(self, name):
+        return self._attrs[name] except KeyError: None
+
+    # Lib/xml/dom/minidom.py:573:
+    def getNamedItem(self, name):
+        try:
+            return self._attrs[name]
+        except KeyError:
+            return None
+
+
+Translate numbers to names, falling back on the numbers::
+            g = grp.getgrnam(tarinfo.gname)[2] except KeyError: tarinfo.gid
+            u = pwd.getpwnam(tarinfo.uname)[2] except KeyError: tarinfo.uid
+
+            # Lib/tarfile.py:2198:
+            try:
+                g = grp.getgrnam(tarinfo.gname)[2]
+            except KeyError:
+                g = tarinfo.gid
+            try:
+                u = pwd.getpwnam(tarinfo.uname)[2]
+            except KeyError:
+                u = tarinfo.uid
+
 Perform some lengthy calculations in EAFP mode, handling division by
 zero as a sort of sticky NaN::
 
@@ -251,22 +329,6 @@ zero as a sort of sticky NaN::
     except ZeroDivisionError:
         value = float("nan")
 
-Retrieving from a generator, either the next yielded value or the
-returned, and coping with the absence of such a return value::
-
-    value = (next(it)
-        except StopIteration as e:
-            (e.args[0] except IndexError: None)
-    )
-
-    try:
-        value = next(it)
-    except StopIteration as e:
-        try:
-            value = e.args[0]
-        except IndexError:
-            value = None
-
 Calculate the mean of a series of numbers, falling back on zero::
 
     value = statistics.mean(lst) except statistics.StatisticsError: 0
@@ -276,22 +338,7 @@ Calculate the mean of a series of numbers, falling back on zero::
     except statistics.StatisticsError:
         value = 0
 
-Set a PyGTK label to a human-readable result from fetching a URL::
-
-    display.set_text(
-        urllib.request.urlopen(url)
-        except urllib.error.HTTPError as e: "Error %d: %s"%(x.getcode(), x.msg)
-        except (ValueError, urllib.error.URLError) as e: "Invalid URL: "+str(e)
-    )
-
-    try:
-        display.set_text(urllib.request.urlopen(url))
-    except urllib.error.HTTPError as e:
-        display.set_text("Error %d: %s"%(x.getcode(), x.msg))
-    except (ValueError, urllib.error.URLError) as e:
-        display.set_text("Invalid URL: "+str(e))
-
-Retrieving a message from either a cache or the internet,with auth
+Retrieving a message from either a cache or the internet, with auth
 check::
 
     logging.info("Message shown to user: %s",((cache[k]
@@ -324,6 +371,45 @@ Looking up objects in a sparse list of overrides::
         (overrides[x] or default).ping()
     except IndexError:
         default.ping()
+
+
+Narrowing of exception-catching scope
+-------------------------------------
+
+The following examples, taken directly from Python's standard library,
+demonstrate how the scope of the try/except can be conveniently narrowed.
+To do this with the statement form of try/except would require a temporary
+variable, but it's far cleaner as an expression.
+
+Lib/ipaddress.py:343::
+            try:
+                ips.append(ip.ip)
+            except AttributeError:
+                ips.append(ip.network_address)
+Becomes::
+            ips.append(ip.ip except AttributeError: ip.network_address)
+The expression form is nearly equivalent to this::
+            try:
+                _ = ip.ip
+            except AttributeError:
+                _ = ip.network_address
+            ips.append(_)
+
+Lib/tempfile.py:130::
+    try:
+        dirlist.append(_os.getcwd())
+    except (AttributeError, OSError):
+        dirlist.append(_os.curdir)
+Becomes::
+    dirlist.append(_os.getcwd() except (AttributeError, OSError): _os.curdir)
+
+Lib/asyncore.py:264::
+            try:
+                status.append('%s:%d' % self.addr)
+            except TypeError:
+                status.append(repr(self.addr))
+Becomes::
+            status.append('%s:%d' % self.addr except TypeError: repr(self.addr))
 
 
 Deferred sub-proposals
@@ -435,6 +521,17 @@ into the expression form.  Its few uses can simply be left unchanged.
 Consequently, in the interests of simplicity, the 'as' clause is not
 included in this proposal.  A subsequent Python version can add this without
 breaking any existing code, as 'as' is already a keyword.
+
+One example where this could possibly be useful is Lib/imaplib.py:568::
+        try: typ, dat = self._simple_command('LOGOUT')
+        except: typ, dat = 'NO', ['%s: %s' % sys.exc_info()[:2]]
+This could become::
+        typ, dat = (self._simple_command('LOGOUT')
+            except BaseException as e: ('NO', '%s: %s' % (type(e), e)))
+Or perhaps some other variation. This is hardly the most compelling use-case,
+but an intelligent look at this code could tidy it up significantly.  In the
+absence of further examples showing any need of the exception object, I have
+opted to defer indefinitely the recommendation.
 
 
 Rejected sub-proposals
