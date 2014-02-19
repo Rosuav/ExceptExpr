@@ -123,11 +123,147 @@
 #     x = y except SomeError: z
 # and z is usually a constant, too.
 
+# Similarly, there are many cases where a return value is calculated this way.
+
+# Lib/xml/dom/minidom.py:230:
+    def getUserData(self, key):
+        try:
+            return self._user_data[key][0]
+        except (AttributeError, KeyError):
+            return None
+# Becomes:
+    def getUserData(self, key):
+        return self._user_data[key][0] except (AttributeError, KeyError): None
+
+# Lib/xml/dom/minidom.py:489:
+    def item(self, index):
+        try:
+            return self[list(self._attrs.keys())[index]]
+        except IndexError:
+            return None
+# Becomes:
+    def item(self, index):
+        return self[list(self._attrs.keys())[index]] except IndexError: None
+
+# Lib/xml/dom/minidom.py:573:
+    def getNamedItem(self, name):
+        try:
+            return self._attrs[name]
+        except KeyError:
+            return None
+# Not sure why this isn't done with .get() - maybe _attrs isn't a dict.
+# Strong incentive to use explicit and convenient exception catching here.
+    def getNamedItem(self, name):
+        return self._attrs[name] except KeyError: None
+
+# Lib/xml/etree/ElementPath.py:288:
+def find(elem, path, namespaces=None):
+    try:
+        return next(iterfind(elem, path, namespaces))
+    except StopIteration:
+        return None
+# Becomes:
+def find(elem, path, namespaces=None):
+    return next(iterfind(elem, path, namespaces)) except StopIteration: None
+
+# Lib/tkinter/__init__.py:1182:
+        def getint_event(s):
+            """Tk changed behavior in 8.4.2, returning "??" rather more often."""
+            try:
+                return int(s)
+            except ValueError:
+                return s
+# Becomes:
+        def getint_event(s):
+            """Tk changed behavior in 8.4.2, returning "??" rather more often."""
+            return int(s) except ValueError: s
+
+# ---------------------
+
+# Lib/ipaddress.py:343:
+            try:
+                ips.append(ip.ip)
+            except AttributeError:
+                ips.append(ip.network_address)
+# Becomes:
+            ips.append(ip.ip except AttributeError: ip.network_address)
+# This narrows the scope of exception catching; an AttributeError raised
+# during the first append() will now not cause the second to be performed.
+# As a semantic change, this should NOT be done mechanically; but it shows
+# an additional advantage of the proposal. The expression form is nearly
+# equivalent to this:
+            try:
+                _ = ip.ip
+            except AttributeError:
+                _ = ip.network_address
+            ips.append(_)
+# The reduction of scope should be an improvement. There are many cases
+# where it could be applied. Look with intelligence at these; they are
+# semantic changes, and meant to be indicative rather than clear-cut. I
+# may have picked up some that shouldn't be touched.
+
+# Lib/imghdr.py:148:
+            try:
+                print(what(filename))
+            except OSError:
+                print('*** not found ***')
+# Becomes:
+            print(what(filename) except OSError: '*** not found ***')
+
+# Lib/tempfile.py:130:
+    try:
+        dirlist.append(_os.getcwd())
+    except (AttributeError, OSError):
+        dirlist.append(_os.curdir)
+# Becomes:
+    dirlist.append(_os.getcwd() except (AttributeError, OSError): _os.curdir)
+
+# Lib/difflib.py:1452:
+                try:
+                    lines.append(next(diff_lines_iterator))
+                except StopIteration:
+                    lines.append('X')
+# Becomes:
+                lines.append(next(diff_lines_iterator) except StopIteration: 'X')
+
+# Lib/asyncore.py:264:
+            try:
+                status.append('%s:%d' % self.addr)
+            except TypeError:
+                status.append(repr(self.addr))
+# Becomes:
+            status.append('%s:%d' % self.addr except TypeError: repr(self.addr))
+
+
 # -----------------------------
 
 # More complicated/messy examples follow. Not all of them are indented/wrapped
 # ideally; in fact, some of the above are a bit long, too, so they might need
 # to be wrapped.
+
+# Lib/unittest/mock.py:735:
+            try:
+                return name, sig.bind(*args, **kwargs)
+            except TypeError as e:
+                return e.with_traceback(None)
+# Could become:
+            return ((name, sig.bind(*args, **kwargs))
+                except TypeError as e: e.with_traceback(None))
+# Notable because it actually uses 'as'.
+
+# Lib/mailbox.py:1669:
+        try:
+            self.replace_header('Status', status_flags)
+        except KeyError:
+            self.add_header('Status', status_flags)
+# Could become:
+        (self.replace_header except KeyError: self.add_header)('Status', status_flags)
+# This narrows the scope of the except clause, but at the expense of
+# readability. Probably not worth it, except that it's done twice, so
+# possibly it'd be worth capturing the function into a local name.
+# Note that I'm not actually sure of the intended semantics here. Is
+# "self.replace_header" going to raise KeyError, or is it the call to
+# that function that might raise? If the latter, don't change anything.
 
 # Lib/netrc.py:94
                             try:
@@ -274,3 +410,12 @@
                 except KeyError:
                     entry = d[function] = RCEntry(function)
 # This is a *false positive*. Just to show how easy it is to confuse things :)
+
+# Lib/lib2to3/pgen2/driver.py:124:
+            try:
+                g.dump(gp)
+            except OSError as e:
+                logger.info("Writing failed:"+str(e))
+# Technically, this could become:
+            g.dump(gp) except OSError as e: logger.info("Writing failed:"+str(e))
+# However, this is illogical use of the feature and should be discouraged.
