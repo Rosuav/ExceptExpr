@@ -186,13 +186,16 @@ Discussion on python-ideas brought up the following syntax suggestions::
     value = try expr except Exception [as e]: default
     value = expr except default # Catches anything
     value = expr except(Exception) default # Catches only the named type(s)
+    value = default if expr raise Exception
     value = expr except Exception [as e] -> default
     value = expr except Exception [as e] pass default
 
 It has also been suggested that a new keyword be created, rather than
 reusing an existing one.  Such proposals fall into the same structure
 as the last form, but with a different keyword in place of 'pass'.
-Suggestions include 'then', 'when', and 'use'.
+Suggestions include 'then', 'when', and 'use'. Also, in the context of
+the "default if expr raise Exception" proposal, it was suggested that a
+new keyword "raises" be used.
 
 All forms involving the 'as' capturing clause have been deferred from
 this proposal in the interests of simplicity, but are preserved in the
