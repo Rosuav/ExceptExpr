@@ -35,9 +35,16 @@ compare_key = {
 excepts = excepts_with_as = 0
 simple_excepts = simple_excepts_with_as = 0
 
+# Look for names that might become keywords
+search_for = {"raises":0, "then":0, "when":0, "use":0}
+
 class walker(ast.NodeVisitor): # For "Ghost who walks", if you read comics
 	def __init__(self, filename):
 		self.filename = filename
+
+	def visit_Name(self, node):
+		if node.id in search_for:
+			search_for[node.id] += 1
 
 	def visit_ExceptHandler(self, node):
 		"""Keep stats on usage of 'as' in except clauses"""
@@ -132,3 +139,6 @@ if __name__ == "__main__":
 		print("Of",excepts,"except clauses,",excepts_with_as,"use the 'as' clause:",excepts_with_as*100/excepts,"%",file=sys.stderr)
 	if simple_excepts:
 		print("Simple excepts:",simple_excepts_with_as,"/",simple_excepts,"=",simple_excepts_with_as*100/simple_excepts,"%",file=sys.stderr)
+	for name,count in sorted(search_for.items()):
+		if count:
+			print(count,"instances of the name",repr(name),file=sys.stderr)
