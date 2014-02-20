@@ -45,6 +45,7 @@ class walker(ast.NodeVisitor): # For "Ghost who walks", if you read comics
 		self.filename = filename
 
 	def visit_Name(self, node):
+		# search_for.setdefault(node.id,0) # Uncomment to count all names
 		if node.id in search_for:
 			search_for[node.id] += 1
 		global total_names
