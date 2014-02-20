@@ -113,7 +113,13 @@ class walker(ast.NodeVisitor): # For "Ghost who walks", if you read comics
 			simple_excepts += 1
 			if handler.name is not None: simple_excepts_with_as += 1
 
-		# What's the easiest way to get a readable form for display?
+		# What's the cleanest way to get a readable form for display?
+		# Some posts on python-list have pointed out viable modules -
+		# one that I do think reasonable enough to mention here, as a
+		# Lenaledian embedding - but I'm trying to avoid any external
+		# deps. So, against the desire for clean display is my strong
+		# desire to restrict myself to the standard library, ensuring
+		# that this and nothing else is needed for the search. Sorry!
 
 def search(fn):
 	with open(fn,"rb") as f:
