@@ -3,14 +3,6 @@
 
 # First off, there are a huge number like this:
 
-# Lib/pdb.py:803:
-        try:
-            cond = args[1]
-        except IndexError:
-            cond = None
-# Becomes:
-        cond = args[1] except IndexError: None
-
 # Lib/pdb.py:865:
             try:
                 reply = input('Clear all breaks? ')
@@ -48,22 +40,6 @@
                             self.curframe_locals)
                     except: arg)
 
-# Lib/tkinter/filedialog.py:210:
-            try:
-                pwd = os.getcwd()
-            except OSError:
-                pwd = None
-# Becomes:
-            pwd = os.getcwd() except OSError: None
-
-# Lib/tkinter/__init__.py:1222:
-        try:
-            e.widget = self._nametowidget(W)
-        except KeyError:
-            e.widget = W
-# Becomes:
-        e.widget = self._nametowidget(W) except KeyError: W
-
 # Lib/tkinter/__init__.py:1228:
         try:
             e.delta = getint(D)
@@ -80,14 +56,6 @@
 # Becomes:
         rv = self.obj.__lt__(other.obj) except TypeError: NotImplemented
 
-# Lib/lib2to3/pgen2/tokenize.py:370:
-        try:
-            line = readline()
-        except StopIteration:
-            line = ''
-# Becomes:
-        line = readline() except StopIteration: ''
-
 # Lib/copy.py:79:
     try:
         issc = issubclass(cls, type)
@@ -96,16 +64,6 @@
 # Becomes:
     issc = issubclass(cls, type) except TypeError: False
 # (Note that ibid line 157 has almost the same construct but defaulting to 0.)
-
-# Lib/sysconfig.py:529:
-        try:
-            _CONFIG_VARS['abiflags'] = sys.abiflags
-        except AttributeError:
-            # sys.abiflags may not be defined on all platforms.
-            _CONFIG_VARS['abiflags'] = ''
-# Becomes:
-        # sys.abiflags may not be defined on all platforms.
-        _CONFIG_VARS['abiflags'] = sys.abiflags except AttributeError: ''
 
 # Lib/email/_header_value_parser.py:1644:
         try:
@@ -124,16 +82,6 @@
 # and z is usually a constant, too.
 
 # Similarly, there are many cases where a return value is calculated this way.
-
-# Lib/xml/dom/minidom.py:230:
-    def getUserData(self, key):
-        try:
-            return self._user_data[key][0]
-        except (AttributeError, KeyError):
-            return None
-# Becomes:
-    def getUserData(self, key):
-        return self._user_data[key][0] except (AttributeError, KeyError): None
 
 # Lib/xml/dom/minidom.py:489:
     def item(self, index):
@@ -331,19 +279,6 @@ def find(elem, path, namespaces=None):
 # This is a somewhat common structure: look something up in a cache; if not found, calculate it and
 # cache it. It can't be easily improved by this new syntax.
 
-# Lib/tarfile.py:2198:
-            try:
-                g = grp.getgrnam(tarinfo.gname)[2]
-            except KeyError:
-                g = tarinfo.gid
-            try:
-                u = pwd.getpwnam(tarinfo.uname)[2]
-            except KeyError:
-                u = tarinfo.uid
-# Becomes:
-            g = grp.getgrnam(tarinfo.gname)[2] except KeyError: tarinfo.gid
-            u = pwd.getpwnam(tarinfo.uname)[2] except KeyError: tarinfo.uid
-# The parallel is far easier to see when it's in one line per value.
 
 # Lib/idlelib/CallTips.py:95:
         try:
