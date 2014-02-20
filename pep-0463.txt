@@ -201,16 +201,6 @@ All forms involving the 'as' capturing clause have been deferred from
 this proposal in the interests of simplicity, but are preserved in the
 table above as an accurate record of suggestions.
 
-Additionally, the following has been suggested as a similar
-short-hand, though not technically an expression::
-
-    statement except Exception: pass
-
-    try:
-        statement
-    except Exception:
-        pass
-
 
 Open Issues
 ===========
@@ -771,6 +761,31 @@ thinking the except clause is separate from the expression, or into thinking
 this is a function call, makes this non-compelling.  The expression can, of
 course, be parenthesized if desired, as can the default::
     value = (expr) except ExceptionType: (default)
+
+
+Short-hand for "except: pass"
+-----------------------------
+
+The following was been suggested as a similar
+short-hand, though not technically an expression::
+
+    statement except Exception: pass
+
+    try:
+        statement
+    except Exception:
+        pass
+
+For instance, a common use-case is attempting the removal of a file::
+    os.unlink(some_file) except OSError: pass
+
+There is an equivalent already in Python 3.4, however, in contextlib::
+    from contextlib import suppress
+    with suppress(OSError): os.unlink(some_file)
+
+As this is already a single line (or two with a break after the colon),
+there is little need of new syntax and a confusion of statement vs
+expression to achieve this.
 
 
 Copyright
