@@ -187,6 +187,7 @@ Discussion on python-ideas brought up the following syntax suggestions::
     value = expr except default # Catches anything
     value = expr except(Exception) default # Catches only the named type(s)
     value = default if expr raise Exception
+    value = expr or else default if Exception
     value = expr except Exception [as e] -> default
     value = expr except Exception [as e] pass default
 
