@@ -279,7 +279,6 @@ def find(elem, path, namespaces=None):
 # This is a somewhat common structure: look something up in a cache; if not found, calculate it and
 # cache it. It can't be easily improved by this new syntax.
 
-
 # Lib/idlelib/CallTips.py:95:
         try:
             rpcclt = self.editwin.flist.pyshell.interp.rpcclt
