@@ -405,6 +405,164 @@ Becomes::
             status.append('%s:%d' % self.addr except TypeError: repr(self.addr))
 
 
+Comparisons with other languages
+================================
+
+(With thanks to Andrew Barnert for compiling this section.)
+
+`Ruby's`__ "begin…rescue…rescue…else…ensure…end" is an expression
+(potentially with statements inside it).  It has the equivalent of an "as"
+clause, and the equivalent of bare except.  And it uses no punctuation or
+keyword between the bare except/exception class/exception class with as
+clause and the value.  (And yes, it's ambiguous unless you understand
+Ruby's statement/expression rules.)
+
+__ http://www.skorks.com/2009/09/ruby-exceptions-and-exception-handling/
+
+::
+
+    x = begin computation() rescue MyException => e default(e) end;
+    x = begin computation() rescue MyException default() end;
+    x = begin computation() rescue default() end;
+    x = begin computation() rescue MyException default() rescue OtherException other() end;
+
+In terms of this PEP::
+
+    x = computation() except MyException as e default(e)
+    x = computation() except MyException default(e)
+    x = computation() except default(e)
+    x = computation() except MyException default() except OtherException other()
+
+`Erlang`__ has a try expression that looks like this::
+
+__ http://erlang.org/doc/reference_manual/expressions.html#id79284
+
+    x = try computation() catch MyException:e -> default(e) end;
+    x = try computation() catch MyException:e -> default(e); OtherException:e -> other(e) end;
+
+The class and "as" name are mandatory, but you can use "_" for either.
+There's also an optional "when" guard on each, and a "throw" clause that
+you can catch, which I won't get into.  To handle multiple exceptions,
+you just separate the clauses with semicolons, which I guess would map
+to commas in Python.  So::
+
+    x = try computation() except MyException as e -> default(e)
+    x = try computation() except MyException as e -> default(e), OtherException as e->other_default(e)
+
+Erlang also has a "catch" expression, which, despite using the same keyword,
+is completely different, and you don't want to know about it.
+
+
+The ML family has two different ways of dealing with this, "handle" and
+"try"; the difference between the two is that "try" pattern-matches the
+exception, which gives you the effect of multiple except clauses and as
+clauses.  In either form, the handler clause is punctuated by "=>" in
+some dialects, "->" in others.
+
+To avoid confusion, I'll write the function calls in Python style.
+
+Here's `SML's`__ "handle"::
+__ http://www.cs.cmu.edu/~rwh/introsml/core/exceptions.htm
+
+    let x = computation() handle MyException => default();;
+
+Here's `OCaml's`__ "try"::
+__ http://www2.lib.uchicago.edu/keith/ocaml-class/exceptions.html
+
+    let x = try computation() with MyException explanation -> default(explanation);;
+
+    let x = try computation() with 
+
+        MyException(e) -> default(e) 
+      | MyOtherException() -> other_default()
+      | (e) -> fallback(e);;
+
+In terms of this PEP, these would be something like::
+
+    x = computation() except MyException => default()
+    x = try computation() except MyException e -> default()
+    x = (try computation()
+         except MyException as e -> default(e) 
+         except MyOtherException -> other_default()
+         except BaseException as e -> fallback(e))
+
+Many ML-inspired but not-directly-related languages from academia mix things
+up, usually using more keywords and fewer symbols. So, the `Oz`__ would map
+to Python as::
+__ http://mozart.github.io/mozart-v1/doc-1.4.0/tutorial/node5.html
+
+    x = try computation() catch MyException as e then default(e)
+
+
+Many Lisp-derived languages, like `Clojure,`__ implement try/catch as special
+forms (if you don't know what that means, think function-like macros), so you
+write, effectively::
+__ http://clojure.org/special_forms#Special%20Forms--(try%20expr*%20catch-clause*%20finally-clause?)
+
+    try(computation(), catch(MyException, explanation, default(explanation)))
+
+    try(computation(), 
+        catch(MyException, explanation, default(explanation)),
+        catch(MyOtherException, explanation, other_default(explanation)))
+
+In Common Lisp, this is done with a slightly clunkier `"handler-case" macro,`__
+but the basic idea is the same.
+
+__ http://clhs.lisp.se/Body/m_hand_1.htm
+
+
+The Lisp style is, surprisingly, used by some languages that don't have
+macros, like Lua, where `xpcall`__ takes functions. Writing lambdas
+Python-style instead of Lua-style::
+__ http://www.gammon.com.au/scripts/doc.php?lua=xpcall
+
+    x = xpcall(lambda: expression(), lambda e: default(e))
+
+This actually returns (true, expression()) or (false, default(e)), but I think we can ignore that part.
+
+
+Haskell is actually similar to Lua here (except that it's all done
+with monads, of course)::
+
+    x = do catch(lambda: expression(), lambda e: default(e))
+
+You can write a pattern matching expression within the function to decide
+what to do with it; catching and re-raising exceptions you don't want is
+cheap enough to be idiomatic.
+
+But Haskell infixing makes this nicer::
+
+    x = do expression() `catch` lambda: default()
+    x = do expression() `catch` lambda e: default(e)
+
+And that makes the parallel between the lambda colon and the except
+colon in the proposal much more obvious::
+
+
+    x = expression() except Exception: default()
+    x = expression() except Exception as e: default(e)
+
+
+`Tcl`__ has the other half of Lua's xpcall; catch is a function which returns
+true if an exception was caught, false otherwise, and you get the value out
+in other ways.  And it's all built around the the implicit quote-and-exec
+that everything in Tcl is based on, making it even harder to describe in
+Python terms than Lisp macros, but something like::
+__ http://wiki.tcl.tk/902
+
+    if {[ catch("computation()") "explanation"]} { default(explanation) }
+
+
+`Smalltalk`__ is also somewhat hard to map to Python. The basic version
+would be::
+__ http://smalltalk.gnu.org/wiki/exceptions
+
+    x := computation() on:MyException do:default()
+
+… but that's basically Smalltalk's passing-arguments-with-colons
+syntax, not its exception-handling syntax. 
+
+
 Deferred sub-proposals
 ======================
 
