@@ -385,6 +385,12 @@ Becomes::
 
     status.append('%s:%d' % self.addr except TypeError: repr(self.addr))
 
+In each case, the narrowed scope of the try/except ensures that an unexpected
+exception (for instance, AttributeError if "append" were misspelled) does not
+get caught by the same handler.  This is sufficiently unlikely to be reason
+to break the call out into a separate line (as per the five line example
+above), but it is a small benefit gained as a side-effect of the conversion.
+
 
 Comparisons with other languages
 ================================
