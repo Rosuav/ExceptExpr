@@ -335,31 +335,6 @@ Calculate the mean of a series of numbers, falling back on zero::
     except statistics.StatisticsError:
         value = 0
 
-Retrieving a message from either a cache or the internet, with auth
-check::
-
-    logging.info("Message shown to user: %s",((cache[k]
-        except LookupError:
-            (backend.read(k) except OSError: 'Resource not available')
-        )
-        if check_permission(k) else 'Access denied'
-    ) except BaseException: "This is like a bare except clause")
-
-    try:
-        if check_permission(k):
-            try:
-                _ = cache[k]
-            except LookupError:
-                try:
-                    _ = backend.read(k)
-                except OSError:
-                    _ = 'Resource not available'
-        else:
-            _ = 'Access denied'
-    except BaseException:
-        _ = "This is like a bare except clause"
-    logging.info("Message shown to user: %s", _)
-
 Looking up objects in a sparse list of overrides::
 
     (overrides[x] or default except IndexError: default).ping()
