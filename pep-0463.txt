@@ -465,9 +465,9 @@ __ http://www2.lib.uchicago.edu/keith/ocaml-class/exceptions.html
 
     let x = try computation() with MyException explanation -> default(explanation);;
 
-    let x = try computation() with 
+    let x = try computation() with
 
-        MyException(e) -> default(e) 
+        MyException(e) -> default(e)
       | MyOtherException() -> other_default()
       | (e) -> fallback(e);;
 
@@ -476,7 +476,7 @@ In terms of this PEP, these would be something like::
     x = computation() except MyException => default()
     x = try computation() except MyException e -> default()
     x = (try computation()
-         except MyException as e -> default(e) 
+         except MyException as e -> default(e)
          except MyOtherException -> other_default()
          except BaseException as e -> fallback(e))
 
@@ -495,7 +495,7 @@ __ http://clojure.org/special_forms#Special%20Forms--(try%20expr*%20catch-clause
 
     try(computation(), catch(MyException, explanation, default(explanation)))
 
-    try(computation(), 
+    try(computation(),
         catch(MyException, explanation, default(explanation)),
         catch(MyOtherException, explanation, other_default(explanation)))
 
@@ -554,7 +554,7 @@ __ http://smalltalk.gnu.org/wiki/exceptions
     x := computation() on:MyException do:default()
 
 … but that's basically Smalltalk's passing-arguments-with-colons
-syntax, not its exception-handling syntax. 
+syntax, not its exception-handling syntax.
 
 
 Deferred sub-proposals
