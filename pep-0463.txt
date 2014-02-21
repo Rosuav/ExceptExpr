@@ -653,30 +653,26 @@ Capturing the exception object
 ------------------------------
 
 In a try/except block, the use of 'as' to capture the exception object
-creates a local name binding, and implicitly deletes that binding in a
-finally clause.  As 'finally' is not a part of this proposal (see
-below), this makes it tricky to describe; also, this use of 'as' gives
-a way to create a name binding in an expression context.  Should the
-default clause have an inner scope in which the name exists, shadowing
-anything of the same name elsewhere?  Should it behave the same way the
-statement try/except does, and unbind the name?  Should it bind the
-name and leave it bound? (Almost certainly not; this behaviour was
-changed in Python 3 for good reason.)
+creates a local name binding, and implicitly deletes that binding (to
+avoid creating a reference loop) in a finally clause.  In an expression
+context, this makes little sense, and a proper sub-scope would be
+required to safely capture the exception object - something akin to the
+way a list comprehension is handled.  However, CPython currently
+implements a comprehension's subscope with a nested function call, which
+has consequences in some contexts such as class definitions, and is
+therefore unsuitable for this proposal.  Should there be, in future, a
+way to create a true subscope (which could simplify comprehensions,
+except expressions, with blocks, and possibly more), then this proposal
+could be revived; until then, its loss is not a great one, as the simple
+exception handling that is well suited to the expression notation used
+here is generally concerned only with the type of the exception, and not
+its value - further analysis below.
 
-Additionally, this syntax would allow a convenient way to capture
+This syntax would, admittedly, allow a convenient way to capture
 exceptions in interactive Python; returned values are captured by "_",
 but exceptions currently are not. This could be spelled::
 
     >>> expr except Exception as e: e
-
-(The inner scope idea is tempting, but currently CPython handles list
-comprehensions with a nested function call, as this is considered
-easier.  It may be of value to simplify both comprehensions and except
-expressions, but that is a completely separate proposal to this PEP;
-alternatively, it may be better to stick with what's known to
-work. `Nick Coghlan elaborates.`__)
-
-__ https://mail.python.org/pipermail/python-ideas/2014-February/025702.html
 
 An examination of the Python standard library shows that, while the use
 of 'as' is fairly common (occurring in roughly one except clause in five),
