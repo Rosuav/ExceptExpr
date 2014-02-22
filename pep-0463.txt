@@ -41,9 +41,6 @@ support this.
 * min(sequence, default=default) - keyword argument in place of
   ValueError
 
-* sum(sequence, start=default) - slightly different but can do the
-  same job
-
 * statistics.mean(data) - no way to handle an empty iterator
 
 
