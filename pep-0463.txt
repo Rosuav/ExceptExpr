@@ -43,6 +43,34 @@ support this.
 
 * statistics.mean(data) - no way to handle an empty iterator
 
+Had this facility existed early in Python's history, there would have been
+no need to create dict.get() and related methods; the one obvious way to
+handle an absent key would be to respond to the exception.  One method is
+written which signal the absence in one way, and one consistent technique
+is used to respond to the absence.  Instead, we have dict.get(), and as of
+Python 3.4, we also have min(... default=default), and myriad others.  We
+have a LBYL syntax for testing inside an expression, but there is currently
+no EAFP notation; compare the following::
+
+    # LBYL:
+    if key in dic:
+        process(dic[key])
+    else:
+        process(None)
+    # As an expression:
+    process(dic[key] if key in dic else None)
+
+    # EAFP:
+    try:
+        process(dic[key])
+    except KeyError:
+        process(None)
+    # As an expression:
+    process(dic[key] except KeyError: None)
+
+Python generally recommends the EAFP policy, but must then proliferate
+utility functions like dic.get(key,None) to enable this.
+
 
 Rationale
 =========
