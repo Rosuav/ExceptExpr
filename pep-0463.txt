@@ -209,6 +209,40 @@ All forms involving the 'as' capturing clause have been deferred from
 this proposal in the interests of simplicity, but are preserved in the
 table above as an accurate record of suggestions.
 
+The four forms most supported by this proposal are, in order::
+
+    value = (expr except Exception: default)
+    value = (expr except Exception -> default)
+    value = (expr except Exception pass default)
+    value = (expr except Exception then default)
+
+All four maintain left-to-right evaluation order: first the base expression,
+then the exception list, and lastly the default.  This is important, as the
+expressions are evaluated lazily.  By comparison, several of the ad-hoc
+alternatives listed above must (by the nature of functions) evaluate their
+default values eagerly.  The preferred form, using the colon, parallels
+try/except by using "except exception_list:", and parallels lambda by having
+"keyword name_list: subexpression".  Using the arrow introduces a token many
+programmers will not be familiar with, and which currently has no similar
+meaning, but is otherwise quite readable.  The English word "pass" has a
+vaguely similar meaning (consider the common usage "pass by value/reference"
+for function arguments), and "pass" is already a keyword, but as its meaning
+is distinctly unrelated, this may cause confusion.  Using "then" makes sense
+in English, but this introduces a new keyword to the language - albeit one
+not in common use, but a new keyword all the same.
+
+Left to right evaluation order is extremely important to readability, as it
+parallels the order most expressions are evaluated.  Alternatives such as::
+
+    value = (expr except default if Exception)
+
+break this, by first evaluating the two ends, and then coming to the middle;
+while this may not seem terrible (as the exception list will usually be a
+constant), it does add to the confusion when multiple clauses meet, either
+with multiple except/if or with the existing if/else, or a combination.
+Using the preferred order, subexpressions will always be evaluated from
+left to right, no matter how the syntax is nested.
+
 
 Example usage
 =============
