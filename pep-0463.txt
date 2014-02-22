@@ -375,6 +375,10 @@ Look up an attribute, falling back on a default::
     else:
         mode = 'rb'
 
+    return (sys._getframe(1) except AttributeError: None)
+    # Lib/inspect.py:1350:
+    return sys._getframe(1) if hasattr(sys, "_getframe") else None
+
 Perform some lengthy calculations in EAFP mode, handling division by
 zero as a sort of sticky NaN::
 
