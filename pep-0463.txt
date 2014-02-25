@@ -657,7 +657,7 @@ An examination of use-cases shows that this is not needed as often as
 it would be with the statement form, and as its syntax is a point on
 which consensus has not been reached, the entire feature is deferred.
 
-Multiple 'except' keywords can be used, and they will all catch
+Multiple 'except' keywords could be used, and they will all catch
 exceptions raised in the original expression (only)::
 
     # Will catch any of the listed exceptions thrown by expr;
