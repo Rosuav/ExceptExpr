@@ -8,13 +8,35 @@ $ find cpython/ -name \*.py|xargs python3 ExceptExpr/find_except_expr.py >Except
 import ast
 import sys
 
+# Try to locate a cpython install directory. TODO: Locate more
+# intelligently, so we have a better chance of actually finding it.
+try:
+	import io
+	sys.path.append('cpython/Tools/parser')
+	import unparse
+
+	def dump(node):
+		ret = io.StringIO()
+		try:
+			unparse.Unparser(node,ret)
+		except AttributeError:
+			# Binary operators can't be unparsed directly.
+			# Try to translate back into an operator symbol;
+			# if that fails, raise KeyError.
+			return unparse.Unparser.binop[node.__class__.__name__]
+		return ret.getvalue().strip()
+except ImportError:
+	# If we can't get Tools/parser/unparse.py, use ast.dump()
+	# It's not as tidy but it works.
+	dump = ast.dump
+
 verbose = False
 
 compare_key = {
 	# Same target(s).
-	ast.Assign: lambda node: ' '.join(ast.dump(t) for t in node.targets),
+	ast.Assign: lambda node: ' '.join(dump(t) for t in node.targets),
 	# Same target and same operator.
-	ast.AugAssign: lambda node: ast.dump(node.target) + ast.dump(node.op),
+	ast.AugAssign: lambda node: dump(node.target) + dump(node.op) + "=",
 	# A return statement is always compatible with another.
 	ast.Return: lambda node: "(easy)",
 	# Calling these never compatible is wrong. Calling them
