@@ -11,10 +11,7 @@ import sys
 verbose = False
 
 compare_key = {
-	# Currently looking for the same target.
-	# Since I am fairly clueless with the ast module, I'm
-	# looking for string equality of ast.dump(), which is
-	# hardly the best way to do things!
+	# Same target(s).
 	ast.Assign: lambda node: ' '.join(ast.dump(t) for t in node.targets),
 	# Same target and same operator.
 	ast.AugAssign: lambda node: ast.dump(node.target) + ast.dump(node.op),
