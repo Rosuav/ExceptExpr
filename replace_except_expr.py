@@ -12,7 +12,7 @@ explain = True
 # not recommended for normal use - it leads to many translations which, while
 # technically correct, are not really helpful. So it's better to not, except
 # maybe to stress-test the translations.
-# find_except_expr.compare_key[ast.Expr] = lambda node: float("nan")
+find_except_expr.compare_key[ast.Expr] = lambda node: float("nan")
 
 class Walker(find_except_expr.Walker):
 	def __init__(self, *args):
