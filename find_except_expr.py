@@ -132,7 +132,7 @@ class walker(ast.NodeVisitor): # For "Ghost who walks", if you read comics
 		try_node = func(node.body[0])
 		for handler in node.handlers:
 			if try_node != func(handler.body[0]): return
-		print("%s:%d: %s: %s"%(self.filename,node.lineno,try_type.__name__,try_node))
+		self.report(node, try_node)
 		global simple_excepts, simple_excepts_with_as
 		for handler in node.handlers:
 			simple_excepts += 1
@@ -145,6 +145,9 @@ class walker(ast.NodeVisitor): # For "Ghost who walks", if you read comics
 		# deps. So, against the desire for clean display is my strong
 		# desire to restrict myself to the standard library, ensuring
 		# that this and nothing else is needed for the search. Sorry!
+
+	def report(self, node, desc):
+		print("%s:%d: %s: %s"%(self.filename,node.lineno,type(node.body[0]).__name__,desc))
 
 def search(fn):
 	with open(fn,"rb") as f:
