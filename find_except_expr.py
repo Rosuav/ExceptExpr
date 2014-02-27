@@ -59,7 +59,7 @@ search_for = {"raises":0, "then":0, "when":0, "use":0}
 total_names = 0
 unique_names = set()
 
-class walker(ast.NodeVisitor): # For "Ghost who walks", if you read comics
+class Walker(ast.NodeVisitor): # For "Ghost who walks", if you read comics
 	def __init__(self, filename):
 		self.filename = filename
 
@@ -163,7 +163,7 @@ def search(fn):
 			print("Unable to parse", fn, file=sys.stderr)
 			print(e, file=sys.stderr)
 		return
-	walker(fn).visit(tree)
+	Walker(fn).visit(tree)
 
 if __name__ == "__main__":
 	for fn in sys.argv[1:]:
