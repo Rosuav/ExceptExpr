@@ -46,7 +46,7 @@ support this.
 Had this facility existed early in Python's history, there would have been
 no need to create dict.get() and related methods; the one obvious way to
 handle an absent key would be to respond to the exception.  One method is
-written which signal the absence in one way, and one consistent technique
+written which signals the absence in one way, and one consistent technique
 is used to respond to the absence.  Instead, we have dict.get(), and as of
 Python 3.4, we also have min(... default=default), and myriad others.  We
 have a LBYL syntax for testing inside an expression, but there is currently
