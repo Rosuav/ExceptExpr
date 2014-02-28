@@ -867,6 +867,32 @@ there is little need of new syntax and a confusion of statement vs
 expression to achieve this.
 
 
+Common objections
+=================
+
+Colons always introduce suites
+------------------------------
+
+While it is true that many of Python's syntactic elements use the colon to
+introduce a statement suite (if, while, with, for, etcetera), this is not
+by any means the sole use of the colon. Currently, Python syntax includes
+four cases where a colon introduces a subexpression:
+
+* dict display - { ... key:value ... }
+* slice notation - [start:stop:step]
+* function definition - parameter : annotation
+* lambda - arg list: return value
+
+This proposal simply adds a fifth:
+
+* except-expression - exception list: result
+
+Style guides and PEP 8 should recommend not having the colon at the end of
+a wrapped line, which could potentially look like the introduction of a
+suite, but instead advocate wrapping before the exception list, keeping the
+colon clearly between two expressions.
+
+
 Copyright
 =========
 
