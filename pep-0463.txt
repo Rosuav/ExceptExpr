@@ -250,7 +250,8 @@ expressions are evaluated lazily.  By comparison, several of the ad-hoc
 alternatives listed above must (by the nature of functions) evaluate their
 default values eagerly.  The preferred form, using the colon, parallels
 try/except by using "except exception_list:", and parallels lambda by having
-"keyword name_list: subexpression".  Using the arrow introduces a token many
+"keyword name_list: subexpression"; it also can be read as mapping Exception
+to the default value, dict-style.  Using the arrow introduces a token many
 programmers will not be familiar with, and which currently has no similar
 meaning, but is otherwise quite readable.  The English word "pass" has a
 vaguely similar meaning (consider the common usage "pass by value/reference"
@@ -270,6 +271,18 @@ constant), it does add to the confusion when multiple clauses meet, either
 with multiple except/if or with the existing if/else, or a combination.
 Using the preferred order, subexpressions will always be evaluated from
 left to right, no matter how the syntax is nested.
+
+Keeping the existing notation, but shifting the mandatory parentheses, we
+have the following suggestion::
+
+    value = expr except (Exception: default)
+    value = expr except(Exception: default)
+
+This is reminiscent of a function call, or a dict initializer.  The colon
+cannot be confused with introducing a suite, but on the other hand, the new
+syntax guarantees lazy evaluation, which a dict does not.  The potential
+to reduce confusion is considered unjustified by the corresponding potential
+to increase it.
 
 
 Example usage
