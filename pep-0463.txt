@@ -367,6 +367,7 @@ Translate numbers to names, falling back on the numbers::
         u = tarinfo.uid
 
 Look up an attribute, falling back on a default::
+
     mode = (f.mode except AttributeError: 'rb')
 
     # Lib/aifc.py:882:
