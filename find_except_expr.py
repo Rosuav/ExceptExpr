@@ -58,7 +58,8 @@ simple_excepts = simple_excepts_with_as = 0
 search_for = {"raises":0, "then":0, "when":0, "use":0}
 total_names = 0
 unique_names = set()
-total_isisnots = chosen_isisnots = 0
+total_isisnots = 0
+chosen_isisnots = {None:0, False:0, True:0}
 
 class Walker(ast.NodeVisitor): # For "Ghost who walks", if you read comics
 	def __init__(self, filename):
@@ -74,11 +75,11 @@ class Walker(ast.NodeVisitor): # For "Ghost who walks", if you read comics
 
 	def visit_Compare(self, node):
 		if isinstance(node.ops[0], (ast.Is, ast.IsNot)):
-			global total_isisnots, chosen_isisnots
+			global total_isisnots
 			total_isisnots += 1
 			if isinstance(node.comparators[0], ast.NameConstant):
-				if node.comparators[0].value in (None, False, True):
-					chosen_isisnots += 1
+				if node.comparators[0].value in chosen_isisnots:
+					chosen_isisnots[node.comparators[0].value] += 1
 
 	def visit_ExceptHandler(self, node):
 		"""Keep stats on usage of 'as' in except clauses"""
@@ -188,4 +189,7 @@ if __name__ == "__main__":
 		if count:
 			print(count,"instances of the name",repr(name),file=sys.stderr)
 	if total_isisnots:
-		print(total_isisnots,"is/is not operators, of which",chosen_isisnots,"compare against None/False/True")
+		print(total_isisnots,"is/is not operators",file=sys.stderr)
+	for target,count in chosen_isisnots.items():
+		if count:
+			print("\t",count,"comparing against",repr(target),file=sys.stderr)
